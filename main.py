@@ -1,19 +1,15 @@
-from dotenv import load_dotenv
-import os
 import datetime
-import json
-from datetime import datetime, timedelta, timezone
+import os
 
-import aiohttp
-import discord
 import google.generativeai as genai
-import googleapiclient.model
-import requests
 from discord import Message
+from dotenv import load_dotenv
+
 load_dotenv()
 
 gemini_api_key = os.getenv('GEMINI_API_KEY')
 genai.configure(api_key=gemini_api_key)
+
 
 def generate_response(user_input, system_instruction, model="gemini-1.5-pro-002", generation_config=None,
                       safety_settings=None):
@@ -53,8 +49,6 @@ def generate_response(user_input, system_instruction, model="gemini-1.5-pro-002"
 
 
 import discord
-import asyncio
-from datetime import datetime, timedelta
 from datetime import datetime, timedelta, timezone
 
 
@@ -82,18 +76,18 @@ async def split_messages_by_hours(messages, hours_split):
 
     return first_list, second_list
 
+
 # Your Discord token here (user token from the browser's developer tools)
 TOKEN = os.getenv('DISCORD_USER_TOKEN')
 
-#specify the user id of the discord account being able to control the bot
+# specify the user id of the discord account being able to control the bot
 controller_id = os.getenv('CONTROLLER_ID')
 
-#if the bot account can use the commands
+# if the bot account can use the commands
 can_bot_control_itself = True
 
-#specify the user id of the discord account being able to control the bot
+# specify the user id of the discord account being able to control the bot
 controller_channel_id = os.getenv('CONTROLLER_CHANNEL_ID')
-
 
 # Define the first day of the Gaiartian calendar
 first_day = datetime(2022, 9, 1)
@@ -127,13 +121,15 @@ def calculate_gaiartian_date(input_date: str):
     # Return the Gaiartian date as a formatted string
     return year, day, month  # Return the components separately for flexible formatting
 
+
 class MyClient(discord.Client):
     async def on_ready(self):
         print('Logged on as', self.user)
 
-    async def on_message(self, message:Message):
-        #check if the message is from the controller id or the bot if allowed
-        if (can_bot_control_itself and message.author.id == self.user.id) or (str(message.author.id) == str(controller_id)):
+    async def on_message(self, message: Message):
+        # check if the message is from the controller id or the bot if allowed
+        if (can_bot_control_itself and message.author.id == self.user.id) or (
+                str(message.author.id) == str(controller_id)):
             if str(message.channel.id) == str(controller_channel_id):
                 if message.content == "$summarize":
                     summary = await self.summarize(message)
@@ -199,18 +195,18 @@ class MyClient(discord.Client):
             messages_géopolitique, hours_to_summarize)
         # Format messages after splitting
         messages_to_summarize_géopolitique = [await self.format_message(m) for m in
-                                                        messages_to_summarize_géopolitique]
+                                              messages_to_summarize_géopolitique]
         messages_as_context_géopolitique = [await self.format_message(m) for m in
-                                                      messages_as_context_géopolitique]
+                                            messages_as_context_géopolitique]
 
         # Fetch raw messages for annonces channel
         messages_annonces = await self.get_messages_since_last_x_hours(1017475737852317768, context_hours)
         # Split messages into those to summarize and context messages
         messages_to_summarize_annonces, messages_as_context_annonces = await split_messages_by_hours(messages_annonces,
-                                                                                               hours_to_summarize)
+                                                                                                     hours_to_summarize)
         # Format messages after splitting
         messages_to_summarize_annonces = [await self.format_message(m) for m in
-                                                    messages_to_summarize_annonces]
+                                          messages_to_summarize_annonces]
         messages_as_context_annonces = [await self.format_message(m) for m in messages_as_context_annonces]
 
         system_message = f"""Tu seras un Agent dont le but est de résumé des évènements de salons RPs d'un salon discord dans un format tel que les résumés puissent être automatiquement ajoutés à une page fandom. Le serveur discord est le serveur discord d'un serveur minecraft nommé LaBoulangerie qui est un serveur géopolitique semi-rp. Tu résumeras le contenu du salon #géopolitique qui est le salon pour rp et faire de la géopolitique, mais tu résumeras aussi le salon #annonces qui est le salon des annocnes rp et géopolitiques, des villes, nations, entreprises, roganisations, joueurs etc... Tu seras donné la liste des messages des {hours_to_summarize} dernières heures à résumés. Chaque message aura son auteur, sa date, et son contenu textuel. Tu seras aussi donné en contexte, les messages des 7 précédents jours, mais eux ne seront pas à résumés, résume seulement ceux des {hours_to_summarize} (qui te seront donnés séparemment."
@@ -593,14 +589,13 @@ Je rappelle, ta réponse doit être en français, et résumer uniquement les jou
                 response = generate_response("Procède.", system_message)
                 print(response)
                 if len(response) > 2000:
-                    #send multiple messages in a row instead
+                    # send multiple messages in a row instead
                     for i in range(0, len(response), 2000):
-                        await message.channel.send(response[i:i+2000])
+                        await message.channel.send(response[i:i + 2000])
                 else:
                     await message.channel.send(response)
             except Exception as e:
                 await message.channel.send(f"Error: {e}")
-
 
 
 client = MyClient()
